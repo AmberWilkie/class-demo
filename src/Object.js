@@ -1,5 +1,5 @@
 const Object = {
-  side: '300px',
+  side: 300,
   color: 'black',
   repeat: 1,
   text: 'Start',

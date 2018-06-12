@@ -2,9 +2,18 @@ import React, { Component } from 'react';
 import { Row, Col, Button, Input, Label } from 'reactstrap';
 import './App.css';
 import object from './Object';
+import ObjectManipulator from './ObjectManipulator';
 
 class App extends Component {
-  state = {};
+  initialState = {
+    repeat: object.repeat,
+    side: object.side,
+    text: object.text,
+  };
+
+  state = {
+    ...this.initialState
+  };
 
   componentDidMount() {
     this.fetchObject();
@@ -20,23 +29,23 @@ class App extends Component {
     this.setState({ object: obj, objectArray });
   };
 
-  changeAttribute = ( attribute, value ) => {
-    let obj = this.state.object;
-    obj[attribute] = value;
-    this.fetchObject(obj);
-    this.setState({ message: `You changed the ${attribute} to ${value}!` });
-  };
+  updateMessage = message => this.setState({ message });
+  markResettable = () => this.setState({ resettable: true });
+  updateStateValue = ( field, value ) => this.setState({ [field]: value });
 
-  changeSide = pixels => {
-    let obj = this.state.object;
-    obj.side = `${pixels}px`;
-    this.fetchObject(obj);
-    this.setState({ message: `You changed the sides to ${pixels} pixels!` });
-  }
+  clearValues = () => this.setState({ resettable: false, message: undefined, ...this.initialState });
 
   render() {
-    const { message, objectArray } = this.state;
+    const { message, object, objectArray, resettable, text, repeat, side } = this.state;
     const colors = ['blue', 'red', 'orange', 'aquamarine', 'green', 'gray', 'magenta'];
+
+    const manipulator = new ObjectManipulator({
+      object,
+      fetchObject: this.fetchObject,
+      markResettable: this.markResettable,
+      updateMessage: this.updateMessage,
+      updateStateValue: this.updateStateValue,
+    });
 
     return (
       <Row className="App">
@@ -51,31 +60,34 @@ class App extends Component {
                           textTransform: 'uppercase',
                           margin: '5px'
                         }}
-                        onClick={() => this.changeAttribute('color', color)}
+                        onClick={() => manipulator.changeAttribute(object, 'color', color)}
                 >{color}!</Button>
               ))}
             </div>
             <div>
-              <Label style={{margin: '5px'}}>
+              <Label style={{ margin: '5px' }}>
                 How many boxes?
-                <Input type='number' style={{ width: '200px' }}
-                       onChange={e => this.changeAttribute('repeat', e.target.value)}
+                <Input type='number' style={{ width: '200px' }} value={repeat}
+                       onChange={e => manipulator.changeAttribute(object, 'repeat', e.target.value)}
                 />
               </Label>
-              <Label style={{margin: '5px'}}>
+              <Label style={{ margin: '5px' }}>
                 What text?
-                <Input type='text' style={{ width: '200px' }}
-                       onChange={e => this.changeAttribute('text', e.target.value)}
+                <Input type='text' style={{ width: '200px' }} value={text}
+                       onChange={e => manipulator.changeAttribute(object, 'text', e.target.value)}
                 />
               </Label>
-              <Label style={{margin: '5px'}}>
+              <Label style={{ margin: '5px' }}>
                 How many pixels to a side?
-                <Input type='number' style={{ width: '200px' }}
-                       onChange={e => this.changeSide(e.target.value)}
+                <Input type='number' style={{ width: '200px' }} value={side}
+                       onChange={e => manipulator.changeSide(object, e.target.value)}
                 />
               </Label>
-              {/* This doesn't work yet. The object itself has been edited. */}
-              {(this.state.object !== object) && <Button color='danger'>X</Button>}
+              {resettable && <Button color='danger' onClick={() => {
+                this.fetchObject();
+                this.clearValues();
+              }}>
+                X</Button>}
             </div>
             {message && <div>{message}</div>}
           </header>
@@ -88,8 +100,8 @@ class App extends Component {
                      display: 'flex',
                      justifyContent: 'center',
                      alignItems: 'center',
-                     width: obj.side,
-                     height: obj.side,
+                     width: `${obj.side}px`,
+                     height: `${obj.side}px`,
                      backgroundColor: obj.color
                    }}>
                 <h2>{obj.text}</h2>
